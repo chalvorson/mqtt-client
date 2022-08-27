@@ -32,14 +32,14 @@ Options:
 
 """
 from docopt import docopt
-import readline
+#import readline
 import json
 
 from terminaltables import SingleTable
 
 from mqtt_client import mqtt_client
 
-NAME, VERSION = 'MQTT Client', '1.6.0'
+NAME, VERSION = 'MQTT Client', '1.6.1'
 AUTHOR = 'Samuel de Ancos (2018-2022) <https://github.com/sdeancos/mqtt-client>'
 
 
