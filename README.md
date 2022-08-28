@@ -1,6 +1,6 @@
 # MQTT Client 
 
-ver: 1.6.0
+ver: 1.6.1
 
 [Documentation](https://mqtt.clubpulp.com/)
 
@@ -9,6 +9,10 @@ ver: 1.6.0
 ## Install
 
 > pip install --upgrade mqtt-client
+
+or using pipx
+
+> pipx install https://github.com/chalvorson/mqtt-client.git
 
 ## Examples
 
