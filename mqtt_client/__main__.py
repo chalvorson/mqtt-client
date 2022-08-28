@@ -23,7 +23,7 @@ Options:
   --client_id=<client_id>   Client ID.
   --username=<username>     Username.
   --password=<password>     Password.
-  --transport=<transport>   TCP, TCP-TLS, WS, WS-TLS (Default: TCP)
+  --transport=<transport>   mqtt, mqtts, ws, wss (Default: mqtt)
   --cert_path=<cert_path>   Path cert (Default: ./mqtt_broker_cert.pem)
   --qos=<qos>               Qos (Default: 0)
   --retain=<retain>         Retain (Default: false)
@@ -34,7 +34,7 @@ Options:
 import json
 
 from docopt import docopt
-from terminaltables import SingleTable
+from loguru import logger
 
 from mqtt_client import mqtt_client
 
@@ -54,7 +54,7 @@ def main():
         port = int(port)
         topic = config.get("topic")
         client_id = config.get("client_id", False)
-        transport = config.get("transport", "TCP")
+        transport = config.get("transport", "mqtt")
         path = config.get("cert_path")
         username, password = config.get("username"), config.get("password")
         callback, command = config.get("callback"), config.get("command")
@@ -62,7 +62,7 @@ def main():
         host, port = "localhost", 1883
         topic = None
         client_id = False
-        transport = "TCP"
+        transport = "mqtt"
         path = None
         username, password = None, None
         callback, command = None, None
@@ -96,7 +96,7 @@ def main():
     if "--command" in arguments and arguments["--command"]:
         command = arguments["--command"]
 
-    print(SingleTable([[NAME, VERSION]]).table)
+    logger.info(f"{NAME}, v{VERSION}")
 
     if not topic:
         topic = arguments["--topic"]
@@ -137,7 +137,7 @@ def main():
             elif "--payload" in arguments:
                 payload = arguments["--payload"]
             else:
-                exit(f"│ERROR│ Not payload defined")
+                exit(f"│ERROR│ No payload defined")
 
             is_published = mqtt_client.publish(
                 mqtt_handler=mqtt_handler, payload=payload, qos=qos, retain=retain

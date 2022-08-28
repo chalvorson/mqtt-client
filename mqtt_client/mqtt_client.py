@@ -1,10 +1,11 @@
 import random
 import ssl
 import string
+import sys
 from pathlib import Path
 
 import paho.mqtt.client as mqtt
-from terminaltables import SingleTable
+from loguru import logger
 
 from mqtt_client.subscribe_callbacks import (
     default_subscribe_callback,
@@ -18,7 +19,7 @@ TIMEOUT_DEFAULT = 5
 
 
 class MqttWrapper:
-    def __init__(self, host, port, topic, auth, client_id=False, transport="tcp"):
+    def __init__(self, host, port, topic, auth, client_id=False, transport="mqtt"):
         self.host = host
         self.port = port
         self.auth = auth
@@ -39,13 +40,13 @@ class MqttWrapper:
         self.client.on_connect = self.on_connect
 
     def _set_transport(self, transport: str):
-        if "tcp" == transport.lower():
+        if "mqtt" == transport.lower():
             self.transport, self.tls = "tcp", False
-        elif "tcp-tls" == transport.lower():
+        elif "mqtts" == transport.lower():
             self.transport, self.tls = "tcp", True
         elif "ws" == transport.lower():
             self.transport, self.tls = "websocket", False
-        elif "ws-tls" == transport.lower():
+        elif "wss" == transport.lower():
             self.transport, self.tls = "websocket", True
 
     def set_tls(self, cert_path=None):
@@ -64,8 +65,6 @@ class MqttWrapper:
             ciphers=None,
         )
 
-        # print(f'- SET TLS: {self.cert_path}')
-
     def connect(self):
         if "username" in self.auth and "password" in self.auth:
             if self.auth["username"] and self.auth["password"]:
@@ -79,7 +78,7 @@ class MqttWrapper:
 
     def on_connect(self, mqttc, obj, flags, rc):
         if rc != 0:
-            print(f"│ERROR│ from connect - rc: {rc}")
+            logger.error(f"Connection error - rc: {rc}")
 
     def loop_start(self):
         self.client.loop_start()
@@ -88,7 +87,8 @@ class MqttWrapper:
         try:
             self.client.loop_forever()
         except KeyboardInterrupt:
-            exit("│CTRL+C│ Exit by KeyboardInterrupt")
+            logger.info("CTRL+C was pressed (Caught by KeyboardInterrupt)")
+            sys.exit(1)
 
     def publish(self, payload, qos=0, retain=False):
         try:
@@ -96,11 +96,12 @@ class MqttWrapper:
             message_info.wait_for_publish()
             return message_info.is_published()
         except Exception as ex:
-            exit(ex)
+            logger.error(f"Exception while publishing. {ex}")
+            sys.exit(2)
 
 
 def connect_to_broker(
-    host, port, topic, username, password, client_id=False, transport="tcp", cert_path=None
+    host, port, topic, username, password, client_id=False, transport="mqtt", cert_path=None
 ):
     mqtt_handler = MqttWrapper(
         host=host,
@@ -111,18 +112,10 @@ def connect_to_broker(
         transport=transport,
     )
 
-    table_data = [
-        ["KEY", "VALUE"],
-        ["BROKER SETTINGS", f"{transport}://{host}:{port}"],
-        [
-            "CREDENTIALS USER/PASSWORD",
-            f'{username if username else "-"} {"********" if password else "-"}',
-        ],
-        ["CLIENT-ID", f"{mqtt_handler.client_id}"],
-        ["TOPIC", f"{topic}"],
-    ]
-
-    print(SingleTable(table_data).table)
+    logger.info(f"Broker     : {transport}://{host}:{port}")
+    logger.info(f"Username   : {username if username else '-'}")
+    logger.info(f"Client-Id  : {mqtt_handler.client_id}")
+    logger.info(f"Topic      : {topic}")
 
     if mqtt_handler.tls:
         if cert_path:
@@ -135,10 +128,10 @@ def connect_to_broker(
 
 def publish(mqtt_handler, payload, qos=0, retain=False):
     is_published = mqtt_handler.publish(payload=str(payload), qos=qos, retain=retain)
-    table_data = [
-        [f"publish to {mqtt_handler.topic}", payload, "Published: OK" if is_published else False]
-    ]
-    print(SingleTable(table_data).table)
+    logger.info(f"Publish:")
+    logger.info(f"    Topic: {mqtt_handler.topic}")
+    logger.info(f"  Payload: {payload}")
+    logger.info(f"Published: OK" if is_published else False)
 
     return is_published
 
@@ -156,7 +149,6 @@ def subscribe(mqtt_handler, callback, command):
         callback = subscribe_callback_command(command=command)
 
     mqtt_handler.on_message(func=callback)
+    logger.info(f"Callback handler: {callback}")
 
-    table_data = [[f"waiting from {callback}", "..."]]
-    print(SingleTable(table_data).table)
     mqtt_handler.loop_forever()
