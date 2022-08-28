@@ -38,14 +38,14 @@ class MqttWrapper:
         self.client = mqtt.Client(self.client_id, clean_session, transport=self.transport)
         self.client.on_connect = self.on_connect
 
-    def _set_transport(self, transport):
-        if "TCP" == transport or "tcp" == transport:
+    def _set_transport(self, transport: str):
+        if "tcp" == transport.lower():
             self.transport, self.tls = "tcp", False
-        elif "TCP-TLS" == transport or "tcp-tls" == transport:
+        elif "tcp-tls" == transport.lower():
             self.transport, self.tls = "tcp", True
-        elif "WS" == transport or "ws" == transport:
+        elif "ws" == transport.lower():
             self.transport, self.tls = "websocket", False
-        elif "WS-TLS" == transport or "ws-tls" == transport:
+        elif "ws-tls" == transport.lower():
             self.transport, self.tls = "websocket", True
 
     def set_tls(self, cert_path=None):
@@ -79,7 +79,7 @@ class MqttWrapper:
 
     def on_connect(self, mqttc, obj, flags, rc):
         if rc != 0:
-            print("│ERROR│ from connect - rc: {}".format(rc))
+            print(f"│ERROR│ from connect - rc: {rc}")
 
     def loop_start(self):
         self.client.loop_start()
@@ -116,7 +116,7 @@ def connect_to_broker(
         ["BROKER SETTINGS", f"{transport}://{host}:{port}"],
         [
             "CREDENTIALS USER/PASSWORD",
-            f'{username if username else "-"} {password if password else "-"}',
+            f'{username if username else "-"} {"********" if password else "-"}',
         ],
         ["CLIENT-ID", f"{mqtt_handler.client_id}"],
         ["TOPIC", f"{topic}"],
