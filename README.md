@@ -4,13 +4,15 @@ ver: 1.6.1
 
 [Documentation](https://mqtt.clubpulp.com/)
 
-[![Downloads](https://pepy.tech/badge/mqtt-client)](https://pepy.tech/project/mqtt-client) [![Downloads](https://pepy.tech/badge/mqtt-client/month)](https://pepy.tech/project/mqtt-client) [![Downloads](https://pepy.tech/badge/mqtt-client/week)](https://pepy.tech/project/mqtt-client)
-
 ## Install
 
 > pip install --upgrade mqtt-client
 
-or using pipx
+Install using pipx (https://pypa.github.io/pipx/installation/)
+
+> pipx install mqtt-client
+
+Install using pipx direct from GitHub:
 
 > pipx install https://github.com/chalvorson/mqtt-client.git
 
