@@ -31,76 +31,75 @@ Options:
   --command=<command>       Command for callback type command.
 
 """
-from docopt import docopt
-#import readline
 import json
 
+from docopt import docopt
 from terminaltables import SingleTable
 
 from mqtt_client import mqtt_client
 
-NAME, VERSION = 'MQTT Client', '1.6.1'
-AUTHOR = 'Samuel de Ancos (2018-2022) <https://github.com/sdeancos/mqtt-client>'
+NAME, VERSION = "MQTT Client", "1.6.1"
+AUTHOR = "Samuel de Ancos (2018-2022) <https://github.com/sdeancos/mqtt-client>"
 
 
 def main():
-    arguments = docopt(f'{NAME} {VERSION}\n{AUTHOR}\n\n{__doc__}', version=f'{NAME} {VERSION}')
+    arguments = docopt(f"{NAME} {VERSION}\n{AUTHOR}\n\n{__doc__}", version=f"{NAME} {VERSION}")
 
     config = None
-    if arguments['--config']:
-        with open(arguments['--config']) as f:
+    if arguments["--config"]:
+        with open(arguments["--config"]) as f:
             _config_content = f.read()
         config = json.loads(_config_content)
-        host, port = config.get('host', 'localhost:1883').split(':')
+        host, port = config.get("host", "localhost:1883").split(":")
         port = int(port)
-        topic = config.get('topic')
-        client_id = config.get('client_id', False)
-        transport = config.get('transport', 'TCP')
-        path = config.get('cert_path')
-        username, password = config.get('username'), config.get('password')
-        callback, command = config.get('callback'), config.get('command')
+        topic = config.get("topic")
+        client_id = config.get("client_id", False)
+        transport = config.get("transport", "TCP")
+        path = config.get("cert_path")
+        username, password = config.get("username"), config.get("password")
+        callback, command = config.get("callback"), config.get("command")
     else:
-        host, port = 'localhost', 1883
+        host, port = "localhost", 1883
         topic = None
         client_id = False
-        transport = 'TCP'
+        transport = "TCP"
         path = None
         username, password = None, None
         callback, command = None, None
 
-    if arguments['--host']:
+    if arguments["--host"]:
         try:
-            host, port = arguments['--host'].split(':')
+            host, port = arguments["--host"].split(":")
         except Exception:
-            exit('│ERROR│ broker host failed. Example: example.your_broker.com:1883')
+            exit("│ERROR│ broker host failed. Example: example.your_broker.com:1883")
         if port:
             port = int(port)
 
-    if '--client_id' in arguments and arguments['--client_id']:
-        client_id = arguments['--client_id']
+    if "--client_id" in arguments and arguments["--client_id"]:
+        client_id = arguments["--client_id"]
 
-    if '--transport' in arguments and arguments['--transport']:
-        transport = arguments['--transport']
+    if "--transport" in arguments and arguments["--transport"]:
+        transport = arguments["--transport"]
 
-    if '--cert_path' in arguments and arguments['--cert_path']:
-        path = arguments['--cert_path']
+    if "--cert_path" in arguments and arguments["--cert_path"]:
+        path = arguments["--cert_path"]
 
-    if '--username' in arguments and arguments['--username']:
-        username = arguments['--username']
+    if "--username" in arguments and arguments["--username"]:
+        username = arguments["--username"]
 
-    if '--password' in arguments and arguments['--password']:
-        password = arguments['--password']
+    if "--password" in arguments and arguments["--password"]:
+        password = arguments["--password"]
 
-    if '--callback' in arguments and arguments['--callback']:
-        callback = arguments['--callback']
+    if "--callback" in arguments and arguments["--callback"]:
+        callback = arguments["--callback"]
 
-    if '--command' in arguments and arguments['--command']:
-        command = arguments['--command']
+    if "--command" in arguments and arguments["--command"]:
+        command = arguments["--command"]
 
     print(SingleTable([[NAME, VERSION]]).table)
 
     if not topic:
-        topic = arguments['--topic']
+        topic = arguments["--topic"]
 
     try:
         mqtt_handler = mqtt_client.connect_to_broker(
@@ -111,49 +110,53 @@ def main():
             username=username,
             password=password,
             transport=transport,
-            cert_path=path
+            cert_path=path,
         )
         mqtt_handler.connect()
     except Exception as ex:
-        exit(f'│ERROR│ {ex}')
+        exit(f"│ERROR│ {ex}")
 
-    if arguments['publish']:
-        if config and 'qos' in config:
-            qos = config.get('qos', 0)
+    if arguments["publish"]:
+        if config and "qos" in config:
+            qos = config.get("qos", 0)
         else:
             qos = 0
-            if '--qos' in arguments and arguments['--qos']:
-                qos = int(arguments['--qos'])
+            if "--qos" in arguments and arguments["--qos"]:
+                qos = int(arguments["--qos"])
 
-        if config and 'retain' in config:
-            retain = bool(config.get('retain', False))
+        if config and "retain" in config:
+            retain = bool(config.get("retain", False))
         else:
             retain = 0
-            if '--retain' in arguments and arguments['--retain']:
-                retain = bool(arguments['--retain'])
+            if "--retain" in arguments and arguments["--retain"]:
+                retain = bool(arguments["--retain"])
 
-        if (config and not 'interactive' in config) or not arguments['--interactive']:
-            if config and 'payload' in config:
-                payload = config['payload']
-            elif '--payload' in arguments:
-                payload = arguments['--payload']
+        if (config and "interactive" not in config) or not arguments["--interactive"]:
+            if config and "payload" in config:
+                payload = config["payload"]
+            elif "--payload" in arguments:
+                payload = arguments["--payload"]
             else:
-                exit(f'│ERROR│ Not payload defined')
+                exit(f"│ERROR│ Not payload defined")
 
-            is_published = mqtt_client.publish(mqtt_handler=mqtt_handler, payload=payload, qos=qos, retain=retain)
+            is_published = mqtt_client.publish(
+                mqtt_handler=mqtt_handler, payload=payload, qos=qos, retain=retain
+            )
         else:
             while True:
                 try:
-                    payload = input('[insert payload] ? ')
-                    is_published = mqtt_client.publish(mqtt_handler=mqtt_handler, payload=payload,
-                                                       qos=qos, retain=retain)
+                    payload = input("[insert payload] ? ")
+                    is_published = mqtt_client.publish(
+                        mqtt_handler=mqtt_handler, payload=payload, qos=qos, retain=retain
+                    )
                 except KeyboardInterrupt:
-                    exit('[CTRL+C] Exit')
+                    exit("[CTRL+C] Exit")
                 except EOFError:
-                    exit('[CTRL+D] Exit')
+                    exit("[CTRL+D] Exit")
 
-    if arguments['subscribe']:
+    if arguments["subscribe"]:
         mqtt_client.subscribe(mqtt_handler=mqtt_handler, callback=callback, command=command)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
